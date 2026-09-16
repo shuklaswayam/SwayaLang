@@ -1,0 +1,10 @@
+# RSIOverSold — tests RSI-only entry/exit, EMA indicator, OR condition
+
+STRATEGY "RSIOverSold" {
+    INDICATOR ema_20 = EMA(CLOSE, 20)
+    INDICATOR rsi_7  = RSI(CLOSE, 7)
+
+    ENTRY:      BUY 50 SHARES OF "TSLA"  IF rsi_7 < 25 OR ema_20 > 150
+    EXIT:       SELL ALL                  IF rsi_7 > 75
+    TAKE_PROFIT: SELL ALL                 IF PRICE > ENTRY_PRICE * 1.10
+}

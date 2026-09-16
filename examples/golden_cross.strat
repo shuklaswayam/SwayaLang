@@ -1,0 +1,13 @@
+# GoldenCross — canonical Phase 1 integration test strategy
+# Tests: INDICATOR declarations (SMA, RSI), ENTRY/EXIT/STOP_LOSS rules,
+#        AND boolean condition, arithmetic expression (ENTRY_PRICE * 0.95)
+
+STRATEGY "GoldenCross" {
+    INDICATOR sma_50  = SMA(CLOSE, 50)
+    INDICATOR sma_200 = SMA(CLOSE, 200)
+    INDICATOR rsi_14  = RSI(CLOSE, 14)
+
+    ENTRY:     BUY 100 SHARES OF "AAPL"  IF sma_50 > sma_200 AND rsi_14 < 30
+    EXIT:      SELL ALL                   IF sma_50 < sma_200
+    STOP_LOSS: SELL ALL                   IF PRICE < ENTRY_PRICE * 0.95
+}
