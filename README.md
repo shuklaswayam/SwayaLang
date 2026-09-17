@@ -83,7 +83,7 @@ Source (.strat)
 ## Project Structure
 
 ```
-Compiler_Design_Proj/
+SwayaLang/
 ├── GRAMMAR.md              ← Formal EBNF grammar specification
 ├── README.md               ← This file
 ├── driver.py               ← CLI entry point
