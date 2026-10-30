@@ -96,3 +96,42 @@ def test_driver_lex_error_exits_1(tmp_path):
     res = run_driver(str(bad_strat))
     assert res.returncode == 1
     assert "LexError" in res.stderr
+
+
+def test_driver_semantic_error_exits_1():
+    """Running driver on a file with undeclared variable exits 1 with SemanticError."""
+    res = run_driver("examples/invalid_semantic_undeclared.strat")
+    assert res.returncode == 1
+    assert "SemanticError" in res.stderr
+
+
+def test_driver_flag_symbols_only():
+    """Verify --symbols flag only displays symbol table."""
+    res = run_driver("examples/golden_cross.strat", "--symbols")
+    assert res.returncode == 0
+    assert "── Symbol Table ──" in res.stdout
+    assert "GoldenCross" in res.stdout
+    assert "── Token Stream ──" not in res.stdout
+
+
+def test_driver_flag_ir_only():
+    """Verify --ir flag displays Three-Address Code."""
+    res = run_driver("examples/golden_cross.strat", "--ir")
+    assert res.returncode == 0
+    assert "── Intermediate Representation (Three-Address Code) ──" in res.stdout
+    assert "ACTION [ENTRY] BUY" in res.stdout
+
+
+def test_driver_flag_run_only():
+    """Verify --run flag executes simulation and displays report."""
+    res = run_driver("examples/rsi_oversold.strat", "--run")
+    assert res.returncode == 0
+    assert "BACKTEST EXECUTION REPORT: RSIOverSold" in res.stdout
+
+
+def test_driver_demo():
+    """Verify --demo flag runs full demonstration."""
+    res = run_driver("--demo")
+    assert res.returncode == 0
+    assert "SWAYALANG PHASE 2 CORE IMPLEMENTATION DEMONSTRATION" in res.stdout
+

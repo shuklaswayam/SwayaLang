@@ -1,0 +1,15 @@
+# MultiStrategy — tests multi-strategy files and lexical scope isolation
+
+STRATEGY "FastSMA" {
+    INDICATOR fast_sma = SMA(CLOSE, 10)
+
+    ENTRY: BUY 100 SHARES OF "AAPL" IF CLOSE > fast_sma
+    EXIT:  SELL ALL                  IF CLOSE < fast_sma
+}
+
+STRATEGY "SlowSMA" {
+    INDICATOR slow_sma = SMA(CLOSE, 30)
+
+    ENTRY: BUY 50 SHARES OF "AAPL" IF CLOSE > slow_sma
+    EXIT:  SELL ALL                 IF CLOSE < slow_sma
+}

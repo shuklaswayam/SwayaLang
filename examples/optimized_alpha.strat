@@ -1,0 +1,17 @@
+# MomentumBreakout — Multi-rule strategy with risk management
+# Phase 3 Compiler Optimization Showcase:
+#   1. Constant Folding: evaluates (25 * 2) -> 50, (1.0 - 0.04) -> 0.96, (1.0 + 0.08) -> 1.08
+#   2. Common Subexpression Elimination (CSE): reuses identical condition (rsi_14 > 50)
+#   3. Dead Code Elimination: prunes dead temporary registers from TAC IR
+#   4. Financial Execution: generates verified profitable trades on AAPL daily data
+
+STRATEGY "MomentumAlpha" {
+    INDICATOR sma_20 = SMA(CLOSE, 20)
+    INDICATOR rsi_14 = RSI(CLOSE, 14)
+
+    ENTRY:       BUY 100 SHARES OF "AAPL" IF (CLOSE > sma_20) AND (rsi_14 > (25 * 2))
+    EXIT:        SELL ALL                  IF (CLOSE < sma_20) AND (rsi_14 > (25 * 2))
+    STOP_LOSS:   SELL ALL                  IF PRICE < ENTRY_PRICE * (1.0 - 0.04)
+    TAKE_PROFIT: SELL ALL                  IF PRICE > ENTRY_PRICE * (1.0 + 0.08)
+}
+

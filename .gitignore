@@ -36,6 +36,7 @@ env/
 .vscode/
 *.swp
 *.swo
+~$*
 
 # Testing & Coverage
 .pytest_cache/

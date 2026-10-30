@@ -149,7 +149,23 @@ class Parser:
     def parse_indicator(self) -> IndicatorDeclNode:
         """Parse ``INDICATOR IDENT '=' func_call``."""
         self._expect(TokenType.INDICATOR, "expected 'INDICATOR' keyword")
-        name_tok = self._expect(TokenType.IDENT, "expected indicator identifier")
+        tok = self._current()
+        if tok.type in (
+            TokenType.IDENT,
+            TokenType.CLOSE,
+            TokenType.OPEN,
+            TokenType.HIGH,
+            TokenType.LOW,
+            TokenType.VOLUME,
+            TokenType.PRICE,
+            TokenType.ENTRY_PRICE,
+            TokenType.SMA,
+            TokenType.EMA,
+            TokenType.RSI,
+        ):
+            name_tok = self._advance()
+        else:
+            name_tok = self._expect(TokenType.IDENT, "expected indicator identifier")
         self._expect(TokenType.EQ, "expected '=' after indicator identifier")
         func_call = self.parse_func_call()
         return IndicatorDeclNode(name=name_tok.value, func_call=func_call)

@@ -1,0 +1,6 @@
+# Negative test: invalid indicator period (negative/zero period)
+STRATEGY "BadPeriodStrategy" {
+    INDICATOR bad_sma = SMA(CLOSE, 0)
+
+    ENTRY: BUY 100 SHARES OF "AAPL" IF CLOSE > bad_sma
+}

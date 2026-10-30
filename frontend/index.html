@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SwayaLang — Algorithmic Strategy Compiler &amp; Backtesting Engine</title>
+  <meta name="description"
+    content="Production IDE for SwayaLang — domain-specific language for quant algorithmic trading strategies. Lex, parse, optimize TAC, benchmark, and backtest strategies in-browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <!-- ═══════════════════════ TOPBAR NAVIGATION ═══════════════════════ -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <div class="brand-name">SwayaLang</div>
+        <div class="brand-sub">Compiler &amp; Optimizer · Phase 3 Final</div>
+      </div>
+      <span class="badge-tag live-badge">
+        <span class="pulse-indicator"></span>
+        v3.0 Engine
+      </span>
+    </div>
+
+    <nav class="topbar-actions">
+      <div class="action-control-group">
+        <label class="control-label" for="data-select">Data</label>
+        <div class="select-wrapper">
+          <select class="data-select input-styled" id="data-select" title="Select market data feed">
+            <option value="AAPL">AAPL · 220 Bars (Daily)</option>
+            <option value="TSLA">TSLA · 150 Bars (Daily)</option>
+            <option value="SYNTH">Synthetic · 200 Bars (GBM)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="action-control-group">
+        <label class="control-label" for="capital-input">Capital</label>
+        <div class="input-prefix-wrapper">
+          <span class="input-prefix">$</span>
+          <input class="capital-input input-styled" id="capital-input" type="number" value="100000" step="5000"
+            title="Initial portfolio cash" placeholder="100,000" />
+        </div>
+      </div>
+
+      <div class="topbar-divider"></div>
+
+      <button class="btn btn-ghost" id="btn-format" title="Format source code (Cmd+Shift+F)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="21" y1="10" x2="7" y2="10"></line>
+          <line x1="21" y1="6" x2="3" y2="6"></line>
+          <line x1="21" y1="14" x2="3" y2="14"></line>
+          <line x1="21" y1="18" x2="7" y2="18"></line>
+        </svg>
+        <span>Format</span>
+      </button>
+
+      <button class="btn btn-primary" id="btn-run" title="Run end-to-end compilation pipeline (Cmd+Enter)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Run Pipeline</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ═══════════════════════ MAIN WORKSPACE ═══════════════════════ -->
+  <div class="workspace">
+
+    <!-- ── LEFT PANEL: Code Editor & Strategy Gallery ── -->
+    <aside class="panel panel-left">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">Strategy Specification</span>
+          <span class="panel-badge-sub">DSL Source</span>
+        </div>
+        <div class="stage-toggles" role="group" aria-label="Pipeline Stages">
+          <label class="toggle-chip active" data-stage="tokens" title="Toggle Lexer Stage">Tokens</label>
+          <label class="toggle-chip active" data-stage="ast" title="Toggle Parser AST">AST</label>
+          <label class="toggle-chip active" data-stage="symbols" title="Toggle Symbol Table">Symbols</label>
+          <label class="toggle-chip active" data-stage="ir" title="Toggle IR TAC">IR</label>
+          <label class="toggle-chip active" data-stage="optimize" title="Toggle Optimization Passes">Optimizer</label>
+          <label class="toggle-chip active" data-stage="run" title="Toggle Financial Backtest">Backtest</label>
+        </div>
+      </div>
+
+      <!-- Monaco Editor Mount Container -->
+      <div id="editor-container"></div>
+
+      <!-- Error Notification Banner -->
+      <div id="error-bar" class="error-bar hidden" role="alert">
+        <div class="error-icon-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="error-content">
+          <span class="error-title">Compilation Diagnostic</span>
+          <span id="error-text"></span>
+        </div>
+      </div>
+
+      <!-- Strategy Presets / Examples -->
+      <div class="examples-panel">
+        <div class="examples-header">
+          <span>Strategy Presets</span>
+          <span class="examples-hint">Click preset to load</span>
+        </div>
+        <div class="examples-list" id="examples-list">
+          <div class="example-skeleton"></div>
+          <div class="example-skeleton"></div>
+          <div class="example-skeleton"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── RIGHT PANEL: Pipeline Outputs & Analytics ── -->
+    <main class="panel panel-right">
+      <div class="tabs-header-wrapper">
+        <div class="tabs-header" id="tabs-header" role="tablist">
+          <button class="tab active" data-tab="tokens" role="tab" aria-selected="true">
+            <span class="tab-indicator"></span>
+            Tokens
+          </button>
+          <button class="tab" data-tab="ast" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            AST
+          </button>
+          <button class="tab" data-tab="symbols" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            Symbols
+          </button>
+          <button class="tab" data-tab="ir" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            Raw IR
+          </button>
+          <button class="tab" data-tab="optimizer" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            Optimizer
+          </button>
+          <button class="tab" data-tab="report" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            Financials
+          </button>
+          <button class="tab" data-tab="benchmark" role="tab" aria-selected="false">
+            <span class="tab-indicator"></span>
+            Benchmark
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Tokens -->
+      <div class="tab-panel active" id="tab-tokens" role="tabpanel">
+        <div class="tab-empty" id="tokens-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="4 7 4 4 20 4 20 7"></polyline>
+              <line x1="9" y1="20" x2="15" y2="20"></line>
+              <line x1="12" y1="4" x2="12" y2="20"></line>
+            </svg>
+          </div>
+          <div class="empty-heading">Lexical Stream Empty</div>
+          <div class="empty-sub">Execute the compilation pipeline to view tokenized lexemes with positions and classification tags.</div>
+        </div>
+        <div class="token-table-wrap hidden" id="tokens-wrap">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">#</th>
+                <th style="width: 140px;">Type</th>
+                <th>Literal Value</th>
+                <th style="width: 70px;">Line</th>
+                <th style="width: 70px;">Col</th>
+              </tr>
+            </thead>
+            <tbody id="token-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: AST -->
+      <div class="tab-panel" id="tab-ast" role="tabpanel">
+        <div class="tab-empty" id="ast-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="5" r="3"></circle>
+              <circle cx="5" cy="19" r="3"></circle>
+              <circle cx="19" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </div>
+          <div class="empty-heading">Abstract Syntax Tree</div>
+          <div class="empty-sub">Parsed syntax hierarchy will populate here after grammar verification.</div>
+        </div>
+        <div class="tree-wrap hidden" id="ast-wrap">
+          <div class="tree-search-bar">
+            <div class="search-input-group">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input class="tree-search input-styled" id="ast-search" placeholder="Filter AST nodes, rules, expressions…" />
+            </div>
+          </div>
+          <div class="tree-root" id="ast-tree"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Symbols -->
+      <div class="tab-panel" id="tab-symbols" role="tabpanel">
+        <div class="tab-empty" id="symbols-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="empty-heading">Scoped Symbol Table</div>
+          <div class="empty-sub">Semantic analyzer bindings, indicator types, and variable scopes will appear here.</div>
+        </div>
+        <div class="symbols-wrap hidden" id="symbols-wrap">
+          <div id="symbols-scopes"></div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Raw IR -->
+      <div class="tab-panel" id="tab-ir" role="tabpanel">
+        <div class="tab-empty" id="ir-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
+          <div class="empty-heading">Intermediate Representation (TAC)</div>
+          <div class="empty-sub">Linearized Three-Address Code quadruples generated from program AST.</div>
+        </div>
+        <pre class="ir-code hidden" id="ir-code"></pre>
+      </div>
+
+      <!-- Tab 5: Optimizer (Phase 3 Core) -->
+      <div class="tab-panel" id="tab-optimizer" role="tabpanel">
+        <div class="tab-empty" id="optimizer-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+          </div>
+          <div class="empty-heading">Optimization Engine</div>
+          <div class="empty-sub">Inspect Constant Folding, Common Subexpression Elimination (CSE), and Dead Code Elimination.</div>
+        </div>
+        <div class="optimizer-wrap hidden" id="optimizer-wrap">
+          <div class="opt-metrics-grid" id="opt-metrics-grid"></div>
+          
+          <div class="opt-diff-container">
+            <div class="opt-diff-box">
+              <div class="opt-diff-title">
+                <span class="diff-title-badge before">BEFORE</span>
+                <span>Original TAC Program</span>
+              </div>
+              <pre class="ir-code" id="opt-raw-ir"></pre>
+            </div>
+            <div class="opt-diff-box">
+              <div class="opt-diff-title">
+                <span class="diff-title-badge after">AFTER</span>
+                <span>Optimized TAC (Folded &amp; Deduplicated)</span>
+              </div>
+              <pre class="ir-code" id="opt-optimized-ir"></pre>
+            </div>
+          </div>
+
+          <div class="opt-log-box">
+            <div class="opt-log-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Applied Compiler Transformations</span>
+            </div>
+            <ul class="opt-log-list" id="opt-log-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 6: Financials / Report -->
+      <div class="tab-panel" id="tab-report" role="tabpanel">
+        <div class="tab-empty" id="report-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </div>
+          <div class="empty-heading">Backtest Execution Report</div>
+          <div class="empty-sub">Simulate order fills against historical market data with full P&amp;L analytics.</div>
+        </div>
+        <div class="report-wrap hidden" id="report-wrap">
+          <!-- Stats cards grid -->
+          <div class="stats-grid" id="stats-grid"></div>
+
+          <!-- Equity curve chart container -->
+          <div class="chart-container">
+            <div class="chart-header">
+              <div>
+                <div class="chart-label">Portfolio Equity Curve</div>
+                <div class="chart-sub">Mark-to-market performance over simulation horizon</div>
+              </div>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="equity-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Trade execution log table -->
+          <div class="tradelog-container">
+            <div class="tradelog-header">
+              <div>
+                <span class="tradelog-title">Simulated Execution Ledger</span>
+                <span class="tradelog-sub">Discrete trade fills and realized profits</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btn-download-csv" title="Export trade blotter to CSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+            </div>
+            <div class="tradelog-wrap">
+              <table class="trade-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Date</th>
+                    <th>Ticker</th>
+                    <th>Order Action</th>
+                    <th>Shares</th>
+                    <th>Price</th>
+                    <th>Realized P&amp;L</th>
+                    <th>Return %</th>
+                  </tr>
+                </thead>
+                <tbody id="trade-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 7: Benchmark -->
+      <div class="tab-panel" id="tab-benchmark" role="tabpanel">
+        <div class="tab-empty" id="benchmark-empty">
+          <div class="empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="empty-heading">Compiler Benchmark Suite</div>
+          <div class="empty-sub">Micro-benchmarking data on pipeline phase latencies, heap allocation, and throughput.</div>
+        </div>
+        <div class="benchmark-wrap hidden" id="benchmark-wrap">
+          <div class="bench-cards-grid" id="bench-cards-grid"></div>
+          <div class="bench-breakdown-box">
+            <div class="bench-box-title">
+              <span>Pipeline Latency Profile</span>
+              <span class="bench-profile-badge">Deterministic Instrumentation</span>
+            </div>
+            <div class="bench-stages-list" id="bench-stages-list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══════════════════════ FOOTER STATUS BAR ═══════════════════════ -->
+  <footer class="statusbar">
+    <div class="status-left-wrap">
+      <span class="status-indicator"></span>
+      <span id="status-left" class="status-left">System Idle · Ready to compile</span>
+    </div>
+    <div class="status-right">
+      <span>SwayaLang Compiler Suite v3.0</span>
+      <span class="status-sep">/</span>
+      <span>BCSE307P Project</span>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════ JAVASCRIPT BUNDLES ═══════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+
+</html>

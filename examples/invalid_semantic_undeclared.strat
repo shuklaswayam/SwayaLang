@@ -1,0 +1,6 @@
+# Negative test: references undeclared variable 'unregistered_indicator'
+STRATEGY "BrokenStrategy" {
+    INDICATOR sma_50 = SMA(CLOSE, 50)
+
+    ENTRY: BUY 100 SHARES OF "AAPL" IF unregistered_indicator > 100
+}

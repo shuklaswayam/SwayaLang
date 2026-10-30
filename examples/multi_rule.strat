@@ -1,0 +1,10 @@
+# MultiRule — demonstrates comprehensive risk management with STOP_LOSS and TAKE_PROFIT
+STRATEGY "MomentumBreakout" {
+    INDICATOR sma_20 = SMA(CLOSE, 20)
+    INDICATOR rsi_14 = RSI(CLOSE, 14)
+
+    ENTRY:       BUY 100 SHARES OF "AAPL" IF CLOSE > sma_20 AND rsi_14 > 50
+    EXIT:        SELL ALL                  IF CLOSE < sma_20
+    STOP_LOSS:   SELL ALL                  IF PRICE < ENTRY_PRICE * 0.96
+    TAKE_PROFIT: SELL ALL                  IF PRICE > ENTRY_PRICE * 1.08
+}
